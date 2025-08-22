@@ -961,32 +961,6 @@ monitor_services_progress() {
             if [ $running_count -eq $total_count ]; then
                 echo ""
                 log_success "All services are ready! 🎉"
-                
-                # Show DNS configuration information
-                log_info "🌐 DNS Configuration Information"
-                cd "$PROJECT_ROOT/01-infrastructure"
-                alb_dns_name=$(terraform output -raw alb_dns_name 2>/dev/null || echo "")
-                domain_name=$(grep "^domain_name" "$PROJECT_ROOT/01-infrastructure/env/dev.tfvars" | cut -d'=' -f2 | tr -d ' "')
-                
-                if [ ! -z "$alb_dns_name" ] && [ ! -z "$domain_name" ]; then
-                    echo ""
-                    echo "🔗 DNS Configuration Required:"
-                    echo "================================"
-                    echo "📋 Domain: $domain_name"
-                    echo "🎯 ALB DNS Name: $alb_dns_name"
-                    echo ""
-                    echo "⚠️  IMPORTANT: Configure your DNS provider to point:"
-                    echo "   $domain_name → $alb_dns_name"
-                    echo ""
-                    echo "📝 DNS Record Type: CNAME"
-                    echo "📝 DNS Record Name: $domain_name"
-                    echo "📝 DNS Record Value: $alb_dns_name"
-                    echo ""
-                    echo "✅ After DNS propagation, your services will be accessible at:"
-                    echo "   https://$domain_name"
-                fi
-                
-                cd "$PROJECT_ROOT"
                 return 0
             fi
         fi
@@ -998,6 +972,34 @@ monitor_services_progress() {
     echo ""
     log_warning "Timeout waiting for services to be ready"
     return 1
+}
+
+# Show DNS configuration information
+show_dns_configuration() {
+    log_info "🌐 DNS Configuration Information"
+    cd "$PROJECT_ROOT/01-infrastructure"
+    alb_dns_name=$(terraform output -raw alb_dns_name 2>/dev/null || echo "")
+    domain_name=$(grep "^domain_name" "$PROJECT_ROOT/01-infrastructure/env/dev.tfvars" | cut -d'=' -f2 | tr -d ' "')
+    
+    if [ ! -z "$alb_dns_name" ] && [ ! -z "$domain_name" ]; then
+        echo ""
+        echo "🔗 DNS Configuration Required:"
+        echo "================================"
+        echo "📋 Domain: $domain_name"
+        echo "🎯 ALB DNS Name: $alb_dns_name"
+        echo ""
+        echo "⚠️  IMPORTANT: Configure your DNS provider to point:"
+        echo "   $domain_name → $alb_dns_name"
+        echo ""
+        echo "📝 DNS Record Type: CNAME"
+        echo "📝 DNS Record Name: $domain_name"
+        echo "📝 DNS Record Value: $alb_dns_name"
+        echo ""
+        echo "✅ After DNS propagation, your services will be accessible at:"
+        echo "   https://$domain_name"
+    fi
+    
+    cd "$PROJECT_ROOT"
 }
 
 # Check status
@@ -1196,46 +1198,6 @@ check_status() {
         echo "⚠️  AWS CLI not installed, ECS check skipped"
     fi
     
-    # Get ALB DNS name and domain for DNS configuration
-    log_info "🌐 DNS Configuration Information"
-    cd "$PROJECT_ROOT/01-infrastructure"
-    alb_dns_name=$(terraform output -raw alb_dns_name 2>/dev/null || echo "")
-    domain_name=$(grep "^domain_name" "$PROJECT_ROOT/01-infrastructure/env/dev.tfvars" | cut -d'=' -f2 | tr -d ' "')
-    
-    if [ ! -z "$alb_dns_name" ] && [ ! -z "$domain_name" ]; then
-        echo ""
-        echo "🔗 DNS Configuration Required:"
-        echo "================================"
-        echo "📋 Domain: $domain_name"
-        echo "🎯 ALB DNS Name: $alb_dns_name"
-        echo ""
-        echo "⚠️  IMPORTANT: Configure your DNS provider to point:"
-        echo "   $domain_name → $alb_dns_name"
-        echo ""
-        echo "📝 DNS Record Type: CNAME"
-        echo "📝 DNS Record Name: $domain_name"
-        echo "📝 DNS Record Value: $alb_dns_name"
-        echo ""
-        echo "✅ After DNS propagation, your services will be accessible at:"
-        echo "   https://$domain_name"
-        
-        echo ""
-        echo "🎯 Complete Demo Setup Required:"
-        echo "================================"
-        echo "📋 For full functionality, run these additional steps:"
-        echo ""
-        echo "1️⃣  Register test plugin:"
-        echo "   ./deploy.sh --mode register-plugin"
-        echo ""
-        echo "2️⃣  Configure Countdown Timer:"
-        echo "   ./deploy.sh --mode configure-countdown-timer"
-        echo ""
-        echo "✅ After completing these steps, the demo will be fully functional!"
-    else
-        echo ""
-        echo "⚠️  DNS information not available"
-    fi
-    
     cd "$PROJECT_ROOT"
     log_success "Check completed"
 }
@@ -1382,6 +1344,9 @@ main() {
             echo "   📦 Services deployment: ${phase4_duration}s"
             echo "   ─────────────────────────────"
             echo "   ⏱️  Total time: ${minutes}m ${seconds}s"
+            
+            # Show DNS configuration at the very end
+            show_dns_configuration
             ;;
         "infra")
             check_dependencies
