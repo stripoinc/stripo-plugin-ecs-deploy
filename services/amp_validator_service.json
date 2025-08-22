@@ -1,0 +1,29 @@
+{
+  "service_name": "amp_validator_service",
+  "display_name": "AMP Validator Service",
+  "description": "AMP Validator service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-amp-validator-service",
+    "image_repo": "stripo/amp-validator-service",
+    "image_tag": "20250728-2101_6203b8b",
+    "cpu": 512,
+    "memory": 1024,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": null,
+    "alb_listener_arn": null
+  },
+  "environment": [],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-amp-validator-service",
+    "stream_prefix": "amp-validator-service"
+  }
+}

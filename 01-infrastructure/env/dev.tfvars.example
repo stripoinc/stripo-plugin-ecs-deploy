@@ -1,0 +1,76 @@
+# =============================================================================
+# STRIPO PLUGIN ECS PROJECT - DEV ENVIRONMENT CONFIGURATION EXAMPLE
+# =============================================================================
+# IMPORTANT: Copy this file to dev.tfvars and fill in your actual values!
+# 
+# This file contains ALL variables that may require changes
+# to configure the project for a specific environment
+
+# =============================================================================
+# AWS CONFIGURATION
+# =============================================================================
+# ⚠️ IMPORTANT: When changing aws_profile, you must also update:
+# - aws_region (must match the region in aws_profile)
+# - ami_id (AMI ID for the new region)
+# - certificate_arn (SSL certificate must be in the same region)
+aws_profile = "your-aws-profile-name"
+aws_region  = "us-east-1"
+
+# =============================================================================
+# PROJECT IDENTIFICATION
+# =============================================================================
+env_prefix = "plugin-ecs-v1"
+
+# =============================================================================
+# NETWORKING CONFIGURATION
+# =============================================================================
+vpc_cidr       = "10.10.0.0/16"
+# ⚠️ AZs will be automatically determined from aws_profile
+public_subnets = ["10.10.1.0/24", "10.10.2.0/24"]
+private_subnets = ["10.10.101.0/24", "10.10.102.0/24"]
+
+# SSH Access to Bastion host (automatically determined via --auto_my_ip flag in deploy.sh)
+ssh_access_cidr = "0.0.0.0/0" # default value for development
+
+# =============================================================================
+# EC2 INSTANCES CONFIGURATION
+# =============================================================================
+# ⚠️ IMPORTANT: When changing region, find the corresponding AMI ID for Ubuntu 22.04 LTS
+# Ubuntu 22.04 LTS (jammy), amd64, us-east-1
+ami_id                    = "ami-053b0d53c279acc90"
+bastion_instance_type     = "t3.micro"
+postgresql_instance_type  = "t3.medium"
+redis_instance_type       = "t3.micro"
+
+# Volume Configuration
+bastion_root_volume_size     = 20  # Bastion can be smaller
+bastion_root_volume_type     = "gp3"
+postgresql_root_volume_size  = 50 # PostgreSQL needs more space for database
+postgresql_root_volume_type  = "gp3"
+redis_root_volume_size       = 50  # Redis standard size
+redis_root_volume_type       = "gp3"
+
+# =============================================================================
+# HTTPS/SSL CONFIGURATION
+# =============================================================================
+# ⚠️ IMPORTANT: When changing region, create a new SSL certificate in ACM
+# Certificate must be in the same region as ALB
+domain_name     = "your-domain.example.com"
+certificate_arn = "arn:aws:acm:us-east-1:YOUR_ACCOUNT_ID:certificate/YOUR_CERTIFICATE_ID"
+enable_https    = true
+
+# =============================================================================
+# DOCKER HUB CONFIGURATION
+# =============================================================================
+docker_hub_username = "your-dockerhub-username"
+docker_hub_password = "your-dockerhub-password"
+
+# =============================================================================
+# TAGS CONFIGURATION
+# =============================================================================
+tags = {
+  Project     = "stripo-plugin-ecs"
+  Environment = "dev"
+  Owner       = "your-name"
+  VantaNonProd = "true"
+}

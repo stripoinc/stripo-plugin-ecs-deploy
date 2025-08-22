@@ -1,0 +1,99 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+*.tfvars.backup
+
+# SSH Keys
+*.pem
+*.key
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# AWS
+.aws/
+
+# Ansible
+*.retry
+02-servers-bootstrap/group_vars/passwords.yml
+
+# Environment variables
+.env
+.env.local
+
+# Backup files
+*.backup
+*.old
+
+# Files marked for deletion
+TO_DELETE/
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Node modules (if any)
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+
+# Java
+*.class
+*.jar
+*.war
+
+# Docker
+.dockerignore
+
+# Secrets
+secrets/
+*.secret
+
+
+.cursor
+
+# Documentation files
+README.md
+README_COMPACT.md
+
+# Environment-specific configuration files
+01-infrastructure/env/*.tfvars
+03-services-deploy/env/*.tfvars
+*.tfvars
+*.tfvars.backup
+
+# SSH Keys directory (contains private keys)
+ssh_keys/
+
+# Backup files
+*.backup
+*.old
+
+# Temporary files
+temp_azs.tfvars

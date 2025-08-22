@@ -1,0 +1,70 @@
+{
+  "service_name": "ai_service",
+  "display_name": "AI Service",
+  "description": "AI service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-ai-service",
+    "image_repo": "stripo/ai-service",
+    "image_tag": "20250729-0547_5948398",
+    "cpu": 1024,
+    "memory": 2048,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": null,
+    "alb_listener_arn": null
+  },
+  "environment": [
+    {
+      "name": "JAVA_TOOL_OPTIONS",
+      "value": "-Xss256k -Xms256m -Xmx512m -XX:ReservedCodeCacheSize=128M"
+    },
+    {
+      "name": "SPRING_DATASOURCE_URL",
+      "value": "jdbc:postgresql://{{POSTGRESQL_PRIVATE_IP}}:5432/ai_service"
+    },
+    {
+      "name": "SPRING_DATASOURCE_USERNAME",
+      "value": "user_ai_service"
+    },
+    {
+      "name": "SPRING_DATASOURCE_PASSWORD",
+      "value": "{{POSTGRESQL_PASSWORD_AI_SERVICE}}"
+    },
+    {
+      "name": "CHAT_GPT_MODEL",
+      "value": "gpt-4o"
+    },
+    {
+      "name": "CHAT_GPT_TEMPERATURE",
+      "value": "1.0"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "SPRING_CLOUD_CONFIG_ENABLED",
+      "value": "false"
+    },
+    {
+      "name": "STRIPO_SECURITY_SERVICE_BASEURL",
+      "value": "http://stripo-security-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "STRIPO_SECURITY_SERVICE_PASSWORDV2",
+      "value": "{{TIMER_PASSWORD}}"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-ai-service",
+    "stream_prefix": "ai-service"
+  }
+}

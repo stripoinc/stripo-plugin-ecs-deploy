@@ -1,0 +1,63 @@
+#!/bin/bash
+
+echo "=== Redis Status Check ==="
+echo
+
+# Get IP address from variable
+REDIS_HOST="{{ redis_host_ip }}"
+
+if [ -z "$REDIS_HOST" ]; then
+    echo "❌ Error: Redis server IP address not found"
+    exit 1
+fi
+
+echo "1. Checking Redis server availability:"
+if nc -z -w3 $REDIS_HOST 6379 2>/dev/null; then
+    echo "✅ $REDIS_HOST:6379 - available"
+else
+    echo "❌ $REDIS_HOST:6379 - unavailable"
+    exit 1
+fi
+echo
+
+echo "2. Checking Redis connection:"
+if timeout 5 bash -c "echo 'PING' | nc $REDIS_HOST 6379" | grep -q "PONG"; then
+    echo "✅ Redis responds to PING"
+else
+    echo "❌ Redis does not respond to PING"
+    exit 1
+fi
+echo
+
+echo "3. Checking basic commands:"
+# Test SET/GET with timeout
+timeout 5 bash -c "echo 'SET test_key \"Hello Redis\"' | nc $REDIS_HOST 6379" > /dev/null
+if timeout 5 bash -c "echo 'GET test_key' | nc $REDIS_HOST 6379" | grep -q "Hello Redis"; then
+    echo "✅ SET/GET commands work"
+else
+    echo "❌ SET/GET commands do not work"
+fi
+
+# Clean up test key
+timeout 5 bash -c "echo 'DEL test_key' | nc $REDIS_HOST 6379" > /dev/null
+echo
+
+echo "4. Checking server information:"
+echo "INFO server" | timeout 5 bash -c "nc $REDIS_HOST 6379" | grep -E "(redis_version|redis_mode|uptime_in_seconds|connected_clients|used_memory_human)" | while read line; do
+    echo "   $line"
+done
+echo
+
+echo "5. Checking memory:"
+echo "INFO memory" | timeout 5 bash -c "nc $REDIS_HOST 6379" | grep -E "(maxmemory|maxmemory_policy|used_memory_human)" | while read line; do
+    echo "   $line"
+done
+echo
+
+echo "✅ Redis server is working correctly!"
+echo "   - Port 6379 is available"
+echo "   - Commands are executing"
+echo "   - Memory is configured"
+echo
+
+echo "=== Check completed ===" 

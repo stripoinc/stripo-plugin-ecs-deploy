@@ -1,0 +1,145 @@
+{
+  "service_name": "stripo_plugin_countdowntimer",
+  "display_name": "Countdown Timer",
+  "description": "Countdown Timer service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-countdowntimer",
+    "image_repo": "stripo/countdowntimer",
+    "image_tag": "20250625-r1332_850b925_master",
+    "cpu": 1024,
+    "memory": 2048,
+    "port_mappings": [
+      {
+        "containerPort": 80,
+        "hostPort": 80
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": "required",
+    "alb_listener_arn": "required",
+    "priority": 100,
+    "path_patterns": [
+      "/api/v1/images/*",
+      "/api-files/*",
+      "/api-uploads/*",
+      "/api/version"
+    ]
+  },
+  "environment": [
+    {
+      "name": "APPNAME",
+      "value": "countdowntimer"
+    },
+    {
+      "name": "ENV",
+      "value": "{{ENV_PREFIX}}"
+    },
+    {
+      "name": "PROFILE",
+      "value": "{{ENV_PREFIX}}"
+    },
+    {
+      "name": "PROD",
+      "value": "true"
+    },
+    {
+      "name": "PLUGIN_PATCHES",
+      "value": "true"
+    },
+    {
+      "name": "AWS_SECRET_MANAGER",
+      "value": "false"
+    },
+    {
+      "name": "AWS_DEFAULT_REGION",
+      "value": "{{AWS_REGION}}"
+    },
+    {
+      "name": "AWS_REGION",
+      "value": "{{AWS_REGION}}"
+    },
+    {
+      "name": "DB_HOST",
+      "value": "{{POSTGRESQL_PRIVATE_IP}}"
+    },
+    {
+      "name": "DB_PORT",
+      "value": "5432"
+    },
+    {
+      "name": "DB_NAME",
+      "value": "countdowntimer"
+    },
+    {
+      "name": "DB_USER",
+      "value": "user_countdowntimer"
+    },
+    {
+      "name": "DB_PASSWORD",
+      "value": "{{POSTGRESQL_PASSWORD_COUNTDOWNTIMER}}"
+    },
+    {
+      "name": "SECRET_KEY",
+      "value": "{{COUNTDOWN_SECRET_KEY}}"
+    },
+    {
+      "name": "USE_HTTPS",
+      "value": "true"
+    },
+    {
+      "name": "GIF_URL",
+      "value": "/api-files/"
+    },
+    {
+      "name": "UPLOAD_URL",
+      "value": "/api-uploads/"
+    },
+    {
+      "name": "CACHE_LIFETIME",
+      "value": "30"
+    },
+    {
+      "name": "FONT_UPLOAD_FOLDER",
+      "value": "/usr/local/countdowntimer/fonts"
+    },
+    {
+      "name": "GIF_FOLDER",
+      "value": "/opt/sources"
+    },
+    {
+      "name": "UPLOAD_FOLDER",
+      "value": "/opt/uploads"
+    },
+    {
+      "name": "HOST",
+      "value": "{{DOMAIN_NAME}}"
+    },
+    {
+      "name": "CALLBACK_URL",
+      "value": "https://dev-account.stripo.email/bapi/stripeapi/v1/timerevents"
+    },
+    {
+      "name": "CALLBACK_USER",
+      "value": "{{TIMER_USERNAME}}"
+    },
+    {
+      "name": "CALLBACK_PASSWORD",
+      "value": "{{TIMER_PASSWORD}}"
+    },
+    {
+      "name": "CALLBACK_SOURCE",
+      "value": "PLUGIN"
+    },
+    {
+      "name": "SERVER_SERVLET_CONTEXT_PATH",
+      "value": "/api"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-countdowntimer",
+    "stream_prefix": "countdowntimer"
+  }
+}

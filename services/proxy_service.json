@@ -1,0 +1,59 @@
+{
+  "service_name": "proxy_service",
+  "display_name": "Stripo Plugin Proxy Service",
+  "description": "Proxy service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-proxy-service",
+    "image_repo": "stripo/stripo-plugin-proxy-service",
+    "image_tag": "20250728-2355_7f477f1",
+    "cpu": 1024,
+    "memory": 2048,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": "required",
+    "alb_listener_arn": "required",
+    "priority": 110,
+    "path_patterns": [
+      "/plugin-proxy-service/*",
+      "/proxy/*"
+    ]
+  },
+  "environment": [
+    {
+      "name": "JAVA_TOOL_OPTIONS",
+      "value": "-Xss256k -Xms256m -Xmx512m -XX:ReservedCodeCacheSize=128M"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "STRIPO_SECURITY_SERVICE_BASEURL",
+      "value": "http://stripo-security-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "STRIPO_SECURITY_SERVICE_PASSWORDV2",
+      "value": "{{TIMER_PASSWORD}}"
+    },
+    {
+      "name": "SERVER_SERVLET_CONTEXT_PATH",
+      "value": "/proxy"
+    },
+    {
+      "name": "SPRING_CLOUD_CONFIG_ENABLED",
+      "value": "false"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-proxy-service",
+    "stream_prefix": "proxy-service"
+  }
+}

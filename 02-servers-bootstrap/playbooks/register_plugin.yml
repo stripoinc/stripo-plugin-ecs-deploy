@@ -1,0 +1,172 @@
+---
+- name: Register test plugin in details database
+  hosts: postgresql
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - "{{ playbook_dir }}/../group_vars/postgresql.yml"
+    - "{{ playbook_dir }}/../group_vars/passwords.yml"
+
+  tasks:
+    - name: Copy SQL file to PostgreSQL server
+      copy:
+        src: "{{ playbook_dir }}/../register_plugin.sql"
+        dest: /tmp/register_plugin.sql
+        mode: '0644'
+
+    - name: Read SQL file content
+      slurp:
+        src: /tmp/register_plugin.sql
+      register: sql_file
+
+    - name: Check if plugins table exists
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "postgres"
+        login_password: "{{ postgresql_root_password }}"
+        db: "stripo_plugin_local_plugin_details"
+        query: |
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'plugins'
+          );
+      register: table_exists
+
+    - name: Display table existence check
+      debug:
+        msg: "Table 'plugins' exists: {{ table_exists.query_result[0].exists }}"
+
+    - name: Create plugins table if it doesn't exist
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "postgres"
+        login_password: "{{ postgresql_root_password }}"
+        db: "stripo_plugin_local_plugin_details"
+        query: |
+          CREATE TABLE IF NOT EXISTS plugins (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            plugin_id VARCHAR(255) UNIQUE NOT NULL,
+            secret_key VARCHAR(255) NOT NULL,
+            status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+            config JSONB,
+            subscription_type VARCHAR(50),
+            sub_domain VARCHAR(255),
+            created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+      when: not table_exists.query_result[0].exists
+
+    - name: Check if plugin already exists
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "postgres"
+        login_password: "{{ postgresql_root_password }}"
+        db: "stripo_plugin_local_plugin_details"
+        query: "SELECT COUNT(*) as count FROM plugins WHERE plugin_id = '7a4b7b4092e011eba8b30242ac130004';"
+      register: plugin_exists
+
+    - name: Display plugin existence check
+      debug:
+        msg: "Plugin 'demoplugin' already exists: {{ plugin_exists.query_result[0].count > 0 }}"
+
+    - name: Execute SQL script to register plugin
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "postgres"
+        login_password: "{{ postgresql_root_password }}"
+        db: "stripo_plugin_local_plugin_details"
+        query: "{{ sql_file.content | b64decode }}"
+      register: sql_result
+      when: plugin_exists.query_result[0].count == 0
+
+    - name: Display SQL execution result
+      debug:
+        msg: "Plugin registration completed successfully"
+      when: sql_result is defined
+
+    - name: Get plugin info for verification
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "postgres"
+        login_password: "{{ postgresql_root_password }}"
+        db: "stripo_plugin_local_plugin_details"
+        query: |
+          SELECT 
+            name, 
+            plugin_id, 
+            secret_key,
+            status, 
+            subscription_type, 
+            sub_domain,
+            created_on
+          FROM plugins 
+          WHERE plugin_id = '7a4b7b4092e011eba8b30242ac130004';
+      register: plugin_verification
+
+    - name: Verify plugin data matches SQL file
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "postgres"
+        login_password: "{{ postgresql_root_password }}"
+        db: "stripo_plugin_local_plugin_details"
+        query: |
+          SELECT 
+            CASE 
+              WHEN name = 'demoplugin' 
+                AND plugin_id = '7a4b7b4092e011eba8b30242ac130004'
+                AND secret_key = 'e55c869d9e2846879c2e8eba1bf1b41b'
+                AND status = 'ACTIVE'
+                AND subscription_type = 'ENTERPRISE'
+                AND sub_domain = 'sub'
+              THEN 'MATCH'
+              ELSE 'MISMATCH'
+            END as verification_result,
+            name,
+            plugin_id,
+            secret_key,
+            status,
+            subscription_type,
+            sub_domain
+          FROM plugins 
+          WHERE plugin_id = '7a4b7b4092e011eba8b30242ac130004';
+      register: data_verification
+
+    - name: Display plugin verification result
+      debug:
+        msg: |
+          PLUGIN VERIFICATION RESULT:
+          ===========================
+          Status: {{ data_verification.query_result[0].verification_result }}
+          {% if plugin_exists.query_result[0].count == 0 %}
+          Action: NEWLY INSERTED
+          {% else %}
+          Action: ALREADY EXISTS
+          {% endif %}
+          
+          Plugin Details:
+          - Name: {{ plugin_verification.query_result[0].name }}
+          - Plugin ID: {{ plugin_verification.query_result[0].plugin_id }}
+          - Status: {{ plugin_verification.query_result[0].status }}
+          - Subscription: {{ plugin_verification.query_result[0].subscription_type }}
+          - Sub Domain: {{ plugin_verification.query_result[0].sub_domain }}
+          - Created: {{ plugin_verification.query_result[0].created_on }}
+          
+          Verification: All fields match expected values
+      when: plugin_verification.query_result | length > 0
+
+    - name: Clean up temporary SQL file
+      file:
+        path: /tmp/register_plugin.sql
+        state: absent
+
+    - name: Final summary
+      debug:
+        msg: |
+          Plugin registration process completed:
+          - Table 'plugins' exists: {{ table_exists.query_result[0].exists }}
+          - Plugin 'demoplugin' exists: {{ plugin_exists.query_result[0].count > 0 }}
+          - Database: stripo_plugin_local_plugin_details
+          - Plugin ID: 7a4b7b4092e011eba8b30242ac130004

@@ -1,0 +1,3 @@
+---
+# Default variables for PostgreSQL role
+# All configuration is handled in group_vars/postgresql.yml 

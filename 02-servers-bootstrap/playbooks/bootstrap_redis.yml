@@ -1,0 +1,18 @@
+---
+- name: Install and configure Redis
+  hosts: redis
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - "{{ playbook_dir }}/../group_vars/redis.yml"
+    - "{{ playbook_dir }}/../group_vars/passwords.yml"
+  pre_tasks:
+    - name: Skip Redis installation if disabled
+      meta: end_play
+      when: not (enable_redis | default(true) | bool)
+  roles:
+    - "{{ playbook_dir }}/../roles/redis"
+  tags:
+    - redis
+    - install 

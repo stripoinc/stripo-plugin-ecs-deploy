@@ -1,0 +1,62 @@
+{
+  "service_name": "stripo_plugin_custom_blocks_service",
+  "display_name": "Custom Blocks Service",
+  "description": "Custom Blocks service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-custom-blocks-service",
+    "image_repo": "stripo/stripo-plugin-custom-blocks-service",
+    "image_tag": "20250728-2356_7f477f1",
+    "cpu": 1024,
+    "memory": 2048,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": null,
+    "alb_listener_arn": null
+  },
+  "environment": [
+    {
+      "name": "JAVA_TOOL_OPTIONS",
+      "value": "-Xss256k -Xms400m -Xmx512m -XX:ReservedCodeCacheSize=128M"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "SPRING_DATASOURCE_URL",
+      "value": "jdbc:postgresql://{{POSTGRESQL_PRIVATE_IP}}:5432/stripo_plugin_local_custom_blocks"
+    },
+    {
+      "name": "SPRING_DATASOURCE_USERNAME",
+      "value": "user_custom_blocks"
+    },
+    {
+      "name": "SPRING_DATASOURCE_PASSWORD",
+      "value": "{{POSTGRESQL_PASSWORD_CUSTOM_BLOCKS}}"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "SPRING_CLOUD_CONFIG_ENABLED",
+      "value": "false"
+    },
+    {
+      "name": "PLUGIN_SERVICE_DOCUMENTSURL",
+      "value": "http://stripo-plugin-documents-service.{{ENV_PREFIX}}:8080"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-stripo-plugin-custom-blocks-service",
+    "stream_prefix": "stripo-plugin-custom-blocks-service"
+  }
+}

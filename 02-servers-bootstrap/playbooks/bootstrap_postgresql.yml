@@ -1,0 +1,16 @@
+---
+- name: Install and configure PostgreSQL
+  hosts: postgresql
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - "{{ playbook_dir }}/../group_vars/postgresql.yml"
+    - "{{ playbook_dir }}/../group_vars/passwords.yml"
+  roles:
+    - "{{ playbook_dir }}/../roles/postgresql"
+  tags:
+    - postgresql
+    - install
+
+ 

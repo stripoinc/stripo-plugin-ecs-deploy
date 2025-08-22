@@ -1,0 +1,43 @@
+---
+# PostgreSQL configuration for Stripo Plugin ECS
+postgresql_version: 15 
+
+# Databases and users for microservices
+# Passwords are taken from passwords.yml as a single source of truth
+databases_users:
+  # Main Stripo Plugin services
+  - db: stripo_plugin_local_bank_images
+    user: user_bank_images
+    password: "{{ postgresql_passwords.stripo_plugin_local_bank_images }}"
+  - db: stripo_plugin_local_custom_blocks
+    user: user_custom_blocks
+    password: "{{ postgresql_passwords.stripo_plugin_local_custom_blocks }}"
+  - db: stripo_plugin_local_documents
+    user: user_documents
+    password: "{{ postgresql_passwords.stripo_plugin_local_documents }}"
+  - db: stripo_plugin_local_drafts
+    user: user_drafts
+    password: "{{ postgresql_passwords.stripo_plugin_local_drafts }}"
+  - db: stripo_plugin_local_html_gen
+    user: user_html_gen
+    password: "{{ postgresql_passwords.stripo_plugin_local_html_gen }}"
+  - db: stripo_plugin_local_plugin_details
+    user: user_plugin_details
+    password: "{{ postgresql_passwords.stripo_plugin_local_plugin_details }}"
+  - db: stripo_plugin_local_plugin_stats
+    user: user_plugin_stats
+    password: "{{ postgresql_passwords.stripo_plugin_local_plugin_stats }}"
+  - db: stripo_plugin_local_securitydb
+    user: user_securitydb
+    password: "{{ postgresql_passwords.stripo_plugin_local_securitydb }}"
+  - db: stripo_plugin_local_timers
+    user: user_timers
+    password: "{{ postgresql_passwords.stripo_plugin_local_timers }}"
+  - db: countdowntimer
+    user: user_countdowntimer
+    password: "{{ postgresql_passwords.countdowntimer }}"
+  - db: ai_service
+    user: user_ai_service
+    password: "{{ postgresql_passwords.ai_service }}"
+
+ 

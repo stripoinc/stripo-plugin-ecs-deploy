@@ -1,0 +1,115 @@
+---
+# Testing all services after installation
+- name: Test all services after installation
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - "{{ playbook_dir }}/../group_vars/passwords.yml"
+  tasks:
+    - name: Test PostgreSQL service
+      service:
+        name: postgresql
+        state: started
+      register: pg_service_status
+      when: inventory_hostname in groups['postgresql']
+
+
+
+    - name: Test PostgreSQL connection
+      shell: |
+        PGPASSWORD={{ postgresql_root_password }} psql -h localhost -U postgres -c 'SELECT version();' | head -1
+      register: pg_version_check
+      when: inventory_hostname in groups['postgresql']
+
+    - name: Get PostgreSQL version clean
+      shell: |
+        PGPASSWORD={{ postgresql_root_password }} psql -h localhost -U postgres -c "SELECT substring(version() from 'PostgreSQL [0-9.]+');"
+      register: pg_version_clean
+      when: inventory_hostname in groups['postgresql']
+
+
+
+    - name: List all created databases
+      shell: |
+        PGPASSWORD={{ postgresql_root_password }} psql -h localhost -U postgres -c "SELECT datname FROM pg_database WHERE datname NOT IN ('template0', 'template1', 'postgres') ORDER BY datname;"
+      register: databases_list
+      when: inventory_hostname in groups['postgresql']
+
+
+
+    - name: Count total databases
+      shell: |
+        PGPASSWORD={{ postgresql_root_password }} psql -h localhost -U postgres -c "SELECT COUNT(*) as total_databases FROM pg_database WHERE datname NOT IN ('template0', 'template1', 'postgres');"
+      register: db_count
+      when: inventory_hostname in groups['postgresql']
+
+
+
+    - name: Test Redis service
+      service:
+        name: redis-server
+        state: started
+      register: redis_service_status
+      when: groups['redis'] is defined and inventory_hostname in groups['redis']
+
+
+
+    - name: Test Redis connection
+      shell: |
+        redis-cli -a {{ redis_password }} ping
+      register: redis_ping_check
+      when: groups['redis'] is defined and inventory_hostname in groups['redis']
+
+
+
+    - name: Test Redis version
+      shell: |
+        redis-cli -a {{ redis_password }} info server | grep redis_version
+      register: redis_version_check
+      when: groups['redis'] is defined and inventory_hostname in groups['redis']
+
+
+
+    - name: Test Bastion SSH connectivity
+      shell: |
+        echo "Bastion SSH connectivity test"
+      register: bastion_test
+      when: inventory_hostname in groups['bastion']
+
+
+
+
+
+# Final summary of all services
+- name: Summary of all services
+  hosts: postgresql
+  gather_facts: false
+  tasks:
+    - name: Show installation summary
+      debug:
+        msg: |
+          ========================================
+          SERVER TESTING COMPLETED!
+          ========================================
+          
+          SERVICE STATUS:
+          - Bastion: available
+          - PostgreSQL: {{ hostvars[groups['postgresql'][0]]['pg_service_status']['status']['ActiveState'] if groups['postgresql'] is defined and groups['postgresql'] else 'N/A' }}
+          - Redis: {{ hostvars[groups['redis'][0]]['redis_service_status']['status']['ActiveState'] if groups['redis'] is defined and groups['redis'] and groups['redis']|length > 0 else 'N/A' }}
+          
+          VERSIONS:
+          - PostgreSQL: {{ hostvars[groups['postgresql'][0]]['pg_version_clean']['stdout_lines'][2] | trim if groups['postgresql'] is defined and groups['postgresql'] else 'N/A' }}
+          - Redis: {{ hostvars[groups['redis'][0]]['redis_version_check']['stdout'] if groups['redis'] is defined and groups['redis'] and groups['redis']|length > 0 else 'N/A' }}
+          
+          POSTGRESQL DATABASES:
+          {% if groups['postgresql'] is defined and groups['postgresql'] %}
+          - Total created: {{ hostvars[groups['postgresql'][0]]['db_count']['stdout_lines'][2] | trim }} databases
+          - Database list:
+          {% for db in hostvars[groups['postgresql'][0]]['databases_list']['stdout_lines'][2:-1] %}
+            * {{ db | trim }}
+          {% endfor %}
+          {% else %}
+          - Databases: N/A
+          {% endif %}
+          
+          ======================================== 

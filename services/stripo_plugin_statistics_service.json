@@ -1,0 +1,54 @@
+{
+  "service_name": "stripo_plugin_statistics_service",
+  "display_name": "Plugin Statistics Service",
+  "description": "Plugin Statistics service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-statistics-service",
+    "image_repo": "stripo/stripo-plugin-statistics-service",
+    "image_tag": "20250728-2354_7f477f1",
+    "cpu": 1024,
+    "memory": 2048,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": null,
+    "alb_listener_arn": null
+  },
+  "environment": [
+    {
+      "name": "JAVA_TOOL_OPTIONS",
+      "value": "-Xss256k -Xms400m -Xmx512m -XX:ReservedCodeCacheSize=128M"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "SPRING_DATASOURCE_URL",
+      "value": "jdbc:postgresql://{{POSTGRESQL_PRIVATE_IP}}:5432/stripo_plugin_local_plugin_stats"
+    },
+    {
+      "name": "SPRING_DATASOURCE_USERNAME",
+      "value": "user_plugin_stats"
+    },
+    {
+      "name": "SPRING_DATASOURCE_PASSWORD",
+      "value": "{{POSTGRESQL_PASSWORD_PLUGIN_STATS}}"
+    },
+    {
+      "name": "SPRING_CLOUD_CONFIG_ENABLED",
+      "value": "false"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-stripo-plugin-statistics-service",
+    "stream_prefix": "stripo-plugin-statistics-service"
+  }
+}

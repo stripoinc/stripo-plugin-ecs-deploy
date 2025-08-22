@@ -1,0 +1,17 @@
+[Unit]
+Description=Redis In-Memory Data Store
+After=network.target
+
+[Service]
+Type=notify
+User={{ redis_user }}
+Group={{ redis_group }}
+ExecStart=/usr/bin/redis-server {{ redis_config_dir }}/redis.conf
+ExecStop=/bin/kill -s QUIT $MAINPID
+TimeoutStopSec=0
+Restart=always
+RestartSec=1
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target 

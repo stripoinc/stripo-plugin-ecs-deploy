@@ -1,0 +1,62 @@
+{
+  "service_name": "stripo_plugin_details_service",
+  "display_name": "Plugin Details Service",
+  "description": "Plugin Details service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-details-service",
+    "image_repo": "stripo/stripo-plugin-details-service",
+    "image_tag": "20250728-2107_6203b8b",
+    "cpu": 1024,
+    "memory": 2048,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": null,
+    "alb_listener_arn": null
+  },
+  "environment": [
+    {
+      "name": "JAVA_TOOL_OPTIONS",
+      "value": "-Xss256k -Xms400m -Xmx512m -XX:ReservedCodeCacheSize=128M"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "SPRING_DATASOURCE_URL",
+      "value": "jdbc:postgresql://{{POSTGRESQL_PRIVATE_IP}}:5432/stripo_plugin_local_plugin_details"
+    },
+    {
+      "name": "SPRING_DATASOURCE_USERNAME",
+      "value": "user_plugin_details"
+    },
+    {
+      "name": "SPRING_DATASOURCE_PASSWORD",
+      "value": "{{POSTGRESQL_PASSWORD_PLUGIN_DETAILS}}"
+    },
+    {
+      "name": "STRIPO_SECURITY_SERVICE_BASEURL",
+      "value": "http://stripo-security-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "STRIPO_SECURITY_SERVICE_PASSWORDV2",
+      "value": "{{TIMER_PASSWORD}}"
+    },
+    {
+      "name": "SPRING_CLOUD_CONFIG_ENABLED",
+      "value": "false"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-stripo-plugin-details-service",
+    "stream_prefix": "stripo-plugin-details-service"
+  }
+}

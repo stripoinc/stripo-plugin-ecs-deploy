@@ -1,0 +1,40 @@
+---
+- name: Setup ECS Exec IAM policies
+  hosts: localhost
+  gather_facts: false
+  vars:
+    env_prefix: "{{ env_prefix | default('plugin-ecs-dev') }}"
+
+  pre_tasks:
+    - name: Validate required variables
+      fail:
+        msg: "aws_profile variable is required"
+      when: aws_profile is not defined or aws_profile == ""
+
+  tasks:
+    - name: Check if SSM policy is already attached
+      shell: |
+        AWS_PROFILE={{ aws_profile }} AWS_REGION={{ aws_region | default('us-east-1') }} aws iam list-attached-role-policies \
+          --role-name "{{ env_prefix }}-ecs-task-role" \
+          --query 'AttachedPolicies[?PolicyArn==`arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore`]' \
+          --output text
+      register: existing_policy
+      changed_when: false
+
+    - name: Attach SSM policy to ECS task role for ECS Exec
+      shell: |
+        AWS_PROFILE={{ aws_profile }} AWS_REGION={{ aws_region | default('us-east-1') }} aws iam attach-role-policy \
+          --role-name "{{ env_prefix }}-ecs-task-role" \
+          --policy-arn "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      when: existing_policy.stdout == ""
+      register: ssm_policy_attachment
+
+    - name: Display ECS Exec setup result
+      debug:
+        msg: "ECS Exec policy attached to {{ env_prefix }}-ecs-task-role"
+      when: ssm_policy_attachment.changed
+
+    - name: Display ECS Exec setup result (no changes)
+      debug:
+        msg: "ECS Exec policy already attached to {{ env_prefix }}-ecs-task-role"
+      when: existing_policy.stdout != ""

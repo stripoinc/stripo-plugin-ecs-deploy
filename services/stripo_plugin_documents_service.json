@@ -1,0 +1,94 @@
+{
+  "service_name": "stripo_plugin_documents_service",
+  "display_name": "Documents Service",
+  "description": "Documents service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-documents-service",
+    "image_repo": "stripo/stripo-plugin-documents-service",
+    "image_tag": "20250728-2356_7f477f1",
+    "cpu": 1024,
+    "memory": 2048,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": null,
+    "alb_listener_arn": null
+  },
+  "environment": [
+    {
+      "name": "JAVA_TOOL_OPTIONS",
+      "value": "-Xss256k -Xms512m -Xmx2560m -XX:ReservedCodeCacheSize=128M"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "SPRING_DATASOURCE_URL",
+      "value": "jdbc:postgresql://{{POSTGRESQL_PRIVATE_IP}}:5432/stripo_plugin_local_documents"
+    },
+    {
+      "name": "SPRING_DATASOURCE_USERNAME",
+      "value": "user_documents"
+    },
+    {
+      "name": "SPRING_DATASOURCE_PASSWORD",
+      "value": "{{POSTGRESQL_PASSWORD_DOCUMENTS}}"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "SPRING_CLOUD_CONFIG_ENABLED",
+      "value": "false"
+    },
+    {
+      "name": "STORAGE_INTERNAL_AWS_ACCESSKEY",
+      "value": "{{S3_ACCESS_KEY_ID}}"
+    },
+    {
+      "name": "STORAGE_INTERNAL_AWS_SECRETKEY",
+      "value": "{{S3_SECRET_ACCESS_KEY}}"
+    },
+    {
+      "name": "STORAGE_INTERNAL_AWS_BUCKETNAME",
+      "value": "{{S3_BUCKET_NAME}}"
+    },
+    {
+      "name": "STORAGE_INTERNAL_AWS_REGION",
+      "value": "{{S3_BUCKET_REGION}}"
+    },
+    {
+      "name": "STORAGE_INTERNAL_AWS_BASEDOWNLOADURL",
+      "value": "{{S3_BASE_DOWNLOAD_URL}}"
+    },
+    {
+      "name": "PLUGIN_SERVICE_SCREENSHOTURL",
+      "value": "http://stripo-plugin-screenshot-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "PLUGIN_SERVICE_PLUGINDETAILSURL",
+      "value": "http://stripo-plugin-details-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "STRIPO_SECURITY_SERVICE_BASEURL",
+      "value": "http://stripo-security-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "STRIPO_SECURITY_SERVICE_PASSWORDV2",
+      "value": "{{TIMER_PASSWORD}}"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-stripo-plugin-documents-service",
+    "stream_prefix": "stripo-plugin-documents-service"
+  }
+}

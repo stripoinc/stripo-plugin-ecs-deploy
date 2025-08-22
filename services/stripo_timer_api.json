@@ -1,0 +1,126 @@
+{
+  "service_name": "stripo_timer_api",
+  "display_name": "Stripo Timer API",
+  "description": "Stripo Timer API service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-timer-api",
+    "image_repo": "stripo/stripo-timer-api",
+    "image_tag": "20250728-2123_6203b8b",
+    "cpu": 1024,
+    "memory": 2048,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": null,
+    "alb_listener_arn": null
+  },
+  "environment": [
+    {
+      "name": "APPNAME",
+      "value": "stripo-timer-api"
+    },
+    {
+      "name": "ENV",
+      "value": "{{ENV_PREFIX}}"
+    },
+    {
+      "name": "PROFILE",
+      "value": "{{ENV_PREFIX}}"
+    },
+    {
+      "name": "SPRING_CONFIG_NAME",
+      "value": "base,application"
+    },
+    {
+      "name": "SPRING_CONFIG_LOCATION",
+      "value": "optional:classpath:/,optional:file:/config/"
+    },
+    {
+      "name": "JVM_MEMORY_OPTS",
+      "value": "-Dspring.cloud.config.enabled=false -Daws.secretsmanager.enabled=false"
+    },
+    {
+      "name": "JAVA_TOOL_OPTIONS",
+      "value": "-Xss256k -Xms256m -Xmx512m -XX:ReservedCodeCacheSize=128M"
+    },
+    {
+      "name": "AWS_SECRET_MANAGER",
+      "value": "false"
+    },
+    {
+      "name": "AWS_DEFAULT_REGION",
+      "value": "{{AWS_REGION}}"
+    },
+    {
+      "name": "AWS_REGION",
+      "value": "{{AWS_REGION}}"
+    },
+    {
+      "name": "SPRING_CLOUD_CONFIG_ENABLED",
+      "value": "false"
+    },
+    {
+      "name": "SPRING_CLOUD_CONFIG_IMPORT_CHECK_ENABLED",
+      "value": "false"
+    },
+    {
+      "name": "SPRING_FLYWAY_BASELINE_ON_MIGRATE",
+      "value": "true"
+    },
+    {
+      "name": "SPRING_ZIPKIN_ENABLED",
+      "value": "false"
+    },
+    {
+      "name": "PLUGIN_PATCHES",
+      "value": "true"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "SPRING_DATASOURCE_URL",
+      "value": "jdbc:postgresql://{{POSTGRESQL_PRIVATE_IP}}:5432/stripo_plugin_local_timers"
+    },
+    {
+      "name": "SPRING_DATASOURCE_USERNAME",
+      "value": "user_timers"
+    },
+    {
+      "name": "SPRING_DATASOURCE_PASSWORD",
+      "value": "{{POSTGRESQL_PASSWORD_TIMERS}}"
+    },
+    {
+      "name": "TIMER_URL",
+      "value": "http://stripo-plugin-countdowntimer.{{ENV_PREFIX}}:80/api/"
+    },
+    {
+      "name": "TIMER_USERNAME",
+      "value": "Admin"
+    },
+    {
+      "name": "TIMER_PASSWORD",
+      "value": "{{TIMER_PASSWORD}}"
+    },
+    {
+      "name": "SPRING_SECURITY_USER_NAME",
+      "value": "security-service"
+    },
+    {
+      "name": "SPRING_SECURITY_USER_PASSWORDV2",
+      "value": "{{TIMER_PASSWORD}}"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-stripo-timer-api",
+    "stream_prefix": "stripo-timer-api"
+  }
+}

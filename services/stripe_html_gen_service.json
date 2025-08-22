@@ -1,0 +1,66 @@
+{
+  "service_name": "stripe_html_gen_service",
+  "display_name": "Stripe HTML Gen Service",
+  "description": "Stripe HTML Gen service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-stripe-html-gen-service",
+    "image_repo": "stripo/stripe-html-gen-service",
+    "image_tag": "20250729-0001_7f477f1",
+    "cpu": 1024,
+    "memory": 2048,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": null,
+    "alb_listener_arn": null
+  },
+  "environment": [
+    {
+      "name": "JAVA_TOOL_OPTIONS",
+      "value": "-Xss256k -Xms400m -Xmx512m -XX:MaxMetaspaceSize=256m -XX:-UseGCOverheadLimit -Djava.net.preferIPv4Stack=true"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "SPRING_DATASOURCE_URL",
+      "value": "jdbc:postgresql://{{POSTGRESQL_PRIVATE_IP}}:5432/stripo_plugin_local_html_gen"
+    },
+    {
+      "name": "SPRING_DATASOURCE_USERNAME",
+      "value": "user_html_gen"
+    },
+    {
+      "name": "SPRING_DATASOURCE_PASSWORD",
+      "value": "{{POSTGRESQL_PASSWORD_HTML_GEN}}"
+    },
+    {
+      "name": "STRIPO_SECURITY_SERVICE_BASEURL",
+      "value": "http://stripo-security-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "STRIPO_SECURITY_SERVICE_PASSWORDV2",
+      "value": "{{TIMER_PASSWORD}}"
+    },
+    {
+      "name": "RATE_LIMIT_ENABLED",
+      "value": "false"
+    },
+    {
+      "name": "SPRING_CLOUD_CONFIG_ENABLED",
+      "value": "false"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-stripe-html-gen-service",
+    "stream_prefix": "stripe-html-gen-service"
+  }
+}

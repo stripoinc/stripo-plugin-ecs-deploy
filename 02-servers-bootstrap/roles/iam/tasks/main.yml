@@ -1,0 +1,19 @@
+---
+# IAM role for ECS Exec setup
+- name: Ensure ECS task role exists
+  aws_iam_role:
+    name: "{{ env_prefix }}-ecs-task-role"
+    assume_role_policy: "{{ lookup('template', 'assume_role_policy.json.j2') }}"
+    tags: "{{ tags }}"
+  register: ecs_task_role
+
+- name: Attach SSM policy to ECS task role for ECS Exec
+  aws_iam_role_policy_attachment:
+    role_name: "{{ env_prefix }}-ecs-task-role"
+    policy_arn: "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  register: ssm_policy_attachment
+
+- name: Display ECS Exec setup result
+  debug:
+    msg: "ECS Exec policy attached to {{ env_prefix }}-ecs-task-role"
+  when: ssm_policy_attachment.changed

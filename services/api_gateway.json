@@ -1,0 +1,114 @@
+{
+  "service_name": "api_gateway",
+  "display_name": "Stripo Plugin API Gateway",
+  "description": "Main API Gateway service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-api-gateway",
+    "image_repo": "stripo/stripo-plugin-api-gateway",
+    "image_tag": "20250729-0536_5948398",
+    "cpu": 2048,
+    "memory": 4096,
+    "initProcessEnabled": true,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ]
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": "required",
+    "alb_listener_arn": "required",
+    "priority": 999,
+    "path_patterns": [
+      "/*"
+    ]
+  },
+  "environment": [
+    {
+      "name": "JAVA_TOOL_OPTIONS",
+      "value": "-Xss256k -Xms400m -Xmx1536m -XX:ReservedCodeCacheSize=128M"
+    },
+    {
+      "name": "LOGGING_LEVEL_ROOT",
+      "value": "INFO"
+    },
+    {
+      "name": "JWT_SECRET_APIKEYV3",
+      "value": "{{JWT_SECRET}}"
+    },
+    {
+      "name": "JWT_SECRET_EXPIRATIONINMINUTES",
+      "value": "30"
+    },
+    {
+      "name": "AUTH_INNERSERVICEPASSWORD",
+      "value": "{{TIMER_PASSWORD}}"
+    },
+    {
+      "name": "SERVICE_TIMER_PASSWORD",
+      "value": "{{TIMER_PASSWORD}}"
+    },
+    {
+      "name": "SERVICE_PLUGINDETAILS_URL",
+      "value": "http://stripo-plugin-details-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "SERVICE_CUSTOMBLOCKS_URL",
+      "value": "http://stripo-plugin-custom-blocks-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "SERVICE_DOCUMENTS_URL",
+      "value": "http://stripo-plugin-documents-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "SERVICE_DRAFTS_URL",
+      "value": "http://stripo-plugin-drafts-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "SERVICE_IMAGESBANK_URL",
+      "value": "http://stripo-plugin-image-bank-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "SERVICE_HTMLGEN_URL",
+      "value": "http://stripo-plugin-stripe-html-gen-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "SERVICE_HTMLCLEANER_URL",
+      "value": "http://stripo-plugin-stripe-html-cleaner-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "SERVICE_STATISTICS_URL",
+      "value": "http://stripo-plugin-statistics-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "SERVICE_TIMER_URL",
+      "value": "http://stripo-timer-api.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "SERVICE_AI_URL",
+      "value": "http://stripo-plugin-ai-service.{{ENV_PREFIX}}:8080"
+    },
+    {
+      "name": "RATE_LIMIT_ENABLED",
+      "value": "false"
+    },
+    {
+      "name": "REDISSON_URL",
+      "value": "redis://{{REDIS_PRIVATE_IP}}:6379"
+    },
+    {
+      "name": "REDISSON_PASSWORD",
+      "value": "{{REDIS_PASSWORD}}"
+    },
+    {
+      "name": "REDISSON_AUTHORIZED",
+      "value": "true"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-api-gateway",
+    "stream_prefix": "api-gateway"
+  }
+}

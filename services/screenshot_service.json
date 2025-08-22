@@ -1,0 +1,34 @@
+{
+  "service_name": "screenshot_service",
+  "display_name": "Screenshot Service",
+  "description": "Screenshot service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-screenshot-service",
+    "image_repo": "stripo/screenshot-service",
+    "image_tag": "20250728-2056_6203b8b",
+    "cpu": 1024,
+    "memory": 2048,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": null,
+    "alb_listener_arn": null
+  },
+  "environment": [
+    {
+      "name": "NODE_MEMORY",
+      "value": "500"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-screenshot-service",
+    "stream_prefix": "screenshot-service"
+  }
+}

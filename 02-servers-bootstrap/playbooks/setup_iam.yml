@@ -1,0 +1,11 @@
+---
+- name: Setup IAM policies for ECS Exec
+  hosts: localhost
+  gather_facts: false
+  vars:
+    env_prefix: "{{ env_prefix | default('plugin-ecs-dev') }}"
+
+  tasks:
+    - name: Include IAM role setup
+      include_role:
+        name: iam

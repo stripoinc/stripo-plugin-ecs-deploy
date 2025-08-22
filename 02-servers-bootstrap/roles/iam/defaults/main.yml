@@ -1,0 +1,3 @@
+---
+# Default variables for IAM role setup
+env_prefix: "{{ env_prefix | default('your-project-prefix') }}"

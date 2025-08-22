@@ -1,0 +1,16 @@
+# Redis configuration for Stripo Plugin
+# Created by Ansible
+
+# Basic settings
+port {{ redis_port }}
+bind {{ redis_bind }}
+maxmemory {{ redis_maxmemory }}
+maxmemory-policy {{ redis_maxmemory_policy }}
+protected-mode {{ redis_protected_mode }}
+requirepass {{ redis_requirepass }}
+
+# Logging
+logfile {{ redis_logfile }}
+
+# Data directory
+dir {{ redis_home }} 

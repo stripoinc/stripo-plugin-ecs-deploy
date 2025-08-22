@@ -1,0 +1,34 @@
+{
+  "service_name": "patches_service",
+  "display_name": "Patches Service",
+  "description": "Patches service for Stripo Plugin ECS",
+  "container": {
+    "name": "stripo-plugin-patches-service",
+    "image_repo": "stripo/patches-service",
+    "image_tag": "20250728-2059_6203b8b",
+    "cpu": 512,
+    "memory": 1024,
+    "port_mappings": [
+      {
+        "containerPort": 8080,
+        "hostPort": 8080
+      }
+    ],
+    "initProcessEnabled": true
+  },
+  "service_config": {
+    "desired_count": 1,
+    "target_group_arn": null,
+    "alb_listener_arn": null
+  },
+  "environment": [
+    {
+      "name": "NODE_OPTIONS",
+      "value": "--max-old-space-size=900"
+    }
+  ],
+  "cloudwatch_logs": {
+    "log_group_name": "/ecs/{{ENV_PREFIX}}-patches-service",
+    "stream_prefix": "patches-service"
+  }
+}

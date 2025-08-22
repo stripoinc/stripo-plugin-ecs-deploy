@@ -1,0 +1,120 @@
+---
+- name: Configure Countdown Timer
+  hosts: postgresql
+  become: true
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    timer_username: "{{ countdown_timer.username }}"
+    database_name: "countdowntimer"
+    database_user: "user_countdowntimer"
+    database_password: "{{ postgresql_passwords.countdowntimer }}"
+    timer_password: "{{ countdown_timer.password }}"
+    timers_database_name: "stripo_plugin_local_timers"
+    timers_database_user: "user_timers"
+    timers_database_password: "{{ postgresql_passwords.stripo_plugin_local_timers }}"
+  vars_files:
+    - "{{ playbook_dir }}/../group_vars/passwords.yml"
+
+  tasks:
+    - name: Install Python dependencies
+      apt:
+        name: 
+          - python3
+          - python3-pip
+          - python3-bcrypt
+        state: present
+        update_cache: yes
+
+    - name: Create temporary Python script for password encoding
+      copy:
+        dest: /tmp/encode_password.py
+        content: |
+          import sys
+          import bcrypt
+          
+          password = sys.argv[1]
+          password = password.encode()
+          print(bcrypt.hashpw(password, bcrypt.gensalt()).decode())
+        mode: '0755'
+
+    - name: Generate password hash
+      shell: python3 /tmp/encode_password.py "{{ timer_password }}"
+      register: password_hash
+      changed_when: false
+
+    - name: Update system_user table with new password hash
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "{{ database_user }}"
+        login_password: "{{ database_password }}"
+        db: "{{ database_name }}"
+        query: |
+          UPDATE system_user 
+          SET password = '{{ password_hash.stdout }}'
+          WHERE username = '{{ timer_username }}';
+
+    - name: Verify password update
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "{{ database_user }}"
+        login_password: "{{ database_password }}"
+        db: "{{ database_name }}"
+        query: |
+          SELECT username, password 
+          FROM system_user 
+          WHERE username = '{{ timer_username }}';
+      register: verify_result
+
+    - name: Clean up temporary files
+      file:
+        path: /tmp/encode_password.py
+        state: absent
+
+    # ========================================
+    # STEP 2: Initialize timer_users table
+    # ========================================
+    
+    - name: Get Admin user ID from countdowntimer database
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "{{ database_user }}"
+        login_password: "{{ database_password }}"
+        db: "{{ database_name }}"
+        query: "SELECT id FROM system_user WHERE username = '{{ timer_username }}';"
+      register: admin_user_result
+
+    - name: Insert Admin user into timer_users table
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "{{ timers_database_user }}"
+        login_password: "{{ timers_database_password }}"
+        db: "{{ timers_database_name }}"
+        query: |
+          INSERT INTO timer_users (timer_user_id, user_account_id)
+          VALUES ({{ admin_user_result.query_result[0].id }}, '{{ timer_username }}')
+          ON CONFLICT (timer_user_id) DO NOTHING;
+
+    - name: Verify timer_users record was created
+      postgresql_query:
+        login_host: "{{ ansible_default_ipv4.address }}"
+        login_user: "{{ timers_database_user }}"
+        login_password: "{{ timers_database_password }}"
+        db: "{{ timers_database_name }}"
+        query: "SELECT * FROM timer_users WHERE user_account_id = '{{ timer_username }}';"
+      register: timer_users_verify_result
+
+    - name: Display configuration summary
+      debug:
+        msg: |
+          COUNTDOWN TIMER CONFIGURATION COMPLETED:
+          =======================================
+          Password Update:
+          - User: {{ timer_username }}
+          - Status: Updated successfully
+          - Hash: {{ password_hash.stdout[:20] }}...
+          
+          Timer Users Initialization:
+          - Admin User ID: {{ admin_user_result.query_result[0].id }}
+          - Record Created: {{ timer_users_verify_result.query_result | length > 0 }}
+          - Database: {{ database_name }}
+          - Timer Database: {{ timers_database_name }}

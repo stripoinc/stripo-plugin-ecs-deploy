@@ -1,0 +1,12 @@
+# Redis role - default variables
+redis_version: "6.2"
+redis_user: redis
+redis_group: redis
+redis_home: /var/lib/redis
+redis_config_dir: /etc/redis
+redis_log_dir: /var/log/redis
+redis_port: 6379
+redis_bind: "0.0.0.0"
+redis_maxmemory: "512mb"
+redis_maxmemory_policy: "allkeys-lru"
+redis_requirepass: "{{ redis_password }}" 

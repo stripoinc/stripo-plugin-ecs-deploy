@@ -1,0 +1,73 @@
+---
+# Install and configure Redis
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  become: true
+
+- name: Install necessary packages
+  apt:
+    name:
+      - redis-server
+      - redis-tools
+    state: present
+  become: true
+
+- name: Create group for Redis
+  group:
+    name: "{{ redis_group }}"
+    state: present
+  become: true
+
+- name: Create user for Redis
+  user:
+    name: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    home: "{{ redis_home }}"
+    shell: /bin/false
+    system: yes
+  become: true
+
+- name: Create directories for Redis
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: '0755'
+  loop:
+    - "{{ redis_home }}"
+    - "{{ redis_config_dir }}"
+    - "{{ redis_log_dir }}"
+  become: true
+
+- name: Create Redis configuration file
+  template:
+    src: redis.conf.j2
+    dest: "{{ redis_config_dir }}/redis.conf"
+    owner: "{{ redis_user }}"
+    group: "{{ redis_group }}"
+    mode: '0644'
+  become: true
+
+- name: Create systemd service for Redis
+  template:
+    src: redis.service.j2
+    dest: /etc/systemd/system/redis.service
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+
+- name: Start Redis with correct parameters
+  shell: |
+    pkill redis-server || true
+    sleep 2
+    redis-server {{ redis_config_dir }}/redis.conf --daemonize yes
+  become: true
+
+- name: Wait for Redis service availability
+  wait_for:
+    port: "{{ redis_port }}"
+    timeout: 30 

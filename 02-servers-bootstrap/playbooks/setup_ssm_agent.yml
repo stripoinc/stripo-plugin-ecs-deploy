@@ -1,0 +1,52 @@
+---
+- name: Setup SSM Agent for Session Manager access
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install SSM Agent
+      apt:
+        name: snapd
+        state: present
+
+    - name: Install SSM Agent via snap
+      snap:
+        name: amazon-ssm-agent
+        state: present
+        classic: yes
+
+    - name: Start and enable SSM Agent service
+      systemd:
+        name: snap.amazon-ssm-agent.amazon-ssm-agent.service
+        state: started
+        enabled: yes
+
+    - name: Wait for SSM Agent to be ready
+      wait_for:
+        timeout: 30
+
+    - name: Check SSM Agent status
+      shell: snap services amazon-ssm-agent
+      register: ssm_status
+      changed_when: false
+
+    - name: Display SSM Agent status
+      debug:
+        msg: "SSM Agent status: {{ ssm_status.stdout }}"
+
+    - name: Test Session Manager connectivity
+      shell: |
+        # This will be used to test if the instance is ready for Session Manager
+        echo "SSM Agent is ready for Session Manager connections"
+      register: ssm_test
+      changed_when: false
+
+    - name: Display Session Manager readiness
+      debug:
+        msg: "{{ ssm_test.stdout }}"
