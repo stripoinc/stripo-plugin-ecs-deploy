@@ -1,0 +1,28 @@
+# aws_profile will be passed from deploy.sh
+# aws_region will be automatically determined from aws_profile
+aws_profile            = "your-aws-profile"
+aws_region             = "us-east-1"
+env_prefix             = "plugin-ecs-v1"
+
+# These values are automatically obtained from infrastructure project outputs:
+ecs_cluster_name       = "your-env-prefix-ecs-cluster"
+vpc_id                 = "vpc-your-vpc-id"
+private_subnet_ids     = ["subnet-your-private-subnet-1","subnet-your-private-subnet-2"]
+alb_arn                = "arn:aws:elasticloadbalancing:region:account:loadbalancer/app/your-alb/your-alb-id"
+alb_listener_arn       = "arn:aws:elasticloadbalancing:region:account:listener/app/your-alb/your-alb-id/your-listener-id"
+https_listener_arn     = "arn:aws:elasticloadbalancing:region:account:listener/app/your-alb/your-alb-id/your-https-listener-id"
+execution_role_arn     = "arn:aws:iam::account:role/your-env-prefix-ecs-execution-role"
+task_role_arn          = "arn:aws:iam::account:role/your-env-prefix-ecs-task-role"
+ecs_sg_id              = "sg-your-ecs-security-group-id"
+cloud_map_namespace_id = "ns-your-service-discovery-namespace-id"
+dockerhub_secret_arn   = "arn:aws:secretsmanager:region:account:secret:your-env-prefix-docker-hub-secret-id"
+
+tags = {
+  Project         = "stripo-plugin-ecs"
+  Environment     = "dev"
+  Owner           = "your-name"
+  VantaNonProd    = "true"
+}
+
+# ECS Services will be generated from JSON files
+ecs_services = {}

@@ -172,11 +172,20 @@ read_passwords_from_yml() {
         return 1
     fi
     
+    # Read application secrets
+    local jwt_secret=$(yq eval '.application_secrets.jwt_secret' "$passwords_file" 2>/dev/null)
+    local countdown_secret_key=$(yq eval '.application_secrets.countdown_secret_key' "$passwords_file" 2>/dev/null)
+    if [ $? -ne 0 ]; then
+        log_warning "Failed to read application secrets from $passwords_file, will generate new ones"
+    fi
+    
     # Export variables for use in other functions
     export POSTGRESQL_PASSWORDS="$postgresql_passwords"
     export REDIS_PASSWORD="$redis_password"
     export TIMER_USERNAME="$timer_username"
     export TIMER_PASSWORD="$timer_password"
+    export JWT_SECRET="$jwt_secret"
+    export COUNTDOWN_SECRET_KEY="$countdown_secret_key"
     
     log_success "Passwords loaded from $passwords_file"
     return 0

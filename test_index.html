@@ -161,8 +161,8 @@
             locale: 'en',
             html: template.html,
             css: template.css,
-            apiBaseUrl: 'https://your-domain.example.com/api/v1',
-            proxyUrl: 'https://your-domain.example.com/proxy/v1/proxy',
+            apiBaseUrl: 'https://plugin-ecs.stripo-test.email/api/v1',
+            proxyUrl: 'https://plugin-ecs.stripo-test.email/proxy/v1/proxy',
             notifications: {
               info: notifications.info.bind(notifications),
               error: notifications.error.bind(notifications),
@@ -180,10 +180,10 @@
               }
             },
             getAuthToken: function (callback) {
-              request('POST', 'https://your-domain.example.com/api/v1/auth',
+              request('POST', 'https://plugin-ecs.stripo-test.email/api/v1/auth',
                 JSON.stringify({
-                  pluginId: 'your-plugin-id-here',
-                  secretKey: 'your-secret-key-here'
+                  pluginId: '7a4b7b4092e011eba8b30242ac130004',
+                  secretKey: 'e55c869d9e2846879c2e8eba1bf1b41b'
                 }),
                 function(data) {
                   callback(JSON.parse(data).token);
