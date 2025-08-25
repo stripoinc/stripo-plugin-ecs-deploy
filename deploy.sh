@@ -436,7 +436,14 @@ show_checklist() {
     if [ -f "$PROJECT_ROOT/01-infrastructure/terraform.tfstate" ]; then
         local resource_count=$(jq '.resources | length' "$PROJECT_ROOT/01-infrastructure/terraform.tfstate" 2>/dev/null || echo "0")
         if [ "$resource_count" -gt 0 ]; then
-            infra_ok=true
+            # Additional check: verify ECS cluster exists
+            local cluster_name=$(cd "$PROJECT_ROOT/01-infrastructure" && terraform output -raw ecs_cluster_name 2>/dev/null || echo "")
+            if [ -n "$cluster_name" ]; then
+                local cluster_exists=$(aws ecs describe-clusters --clusters "$cluster_name" --region "$AWS_REGION" --profile "$AWS_PROFILE" --query 'clusters[0].status' --output text 2>/dev/null || echo "INACTIVE")
+                if [ "$cluster_exists" = "ACTIVE" ]; then
+                    infra_ok=true
+                fi
+            fi
         fi
     fi
     
@@ -445,7 +452,14 @@ show_checklist() {
     if [ -f "$PROJECT_ROOT/03-services-deploy/terraform.tfstate" ]; then
         local resource_count=$(jq '.resources | length' "$PROJECT_ROOT/03-services-deploy/terraform.tfstate" 2>/dev/null || echo "0")
         if [ "$resource_count" -gt 0 ]; then
-            services_ok=true
+            # Additional check: verify ECS services exist
+            local cluster_name=$(cd "$PROJECT_ROOT/01-infrastructure" && terraform output -raw ecs_cluster_name 2>/dev/null || echo "")
+            if [ -n "$cluster_name" ]; then
+                local services_count=$(aws ecs list-services --cluster "$cluster_name" --region "$AWS_REGION" --profile "$AWS_PROFILE" --query 'length(serviceArns)' --output text 2>/dev/null || echo "0")
+                if [ "$services_count" -gt 0 ]; then
+                    services_ok=true
+                fi
+            fi
         fi
     fi
     
@@ -519,13 +533,17 @@ show_checklist() {
         echo "     ./deploy.sh --mode full --auto_my_ip"
         echo ""
         echo "  📝 Or deploy step by step:"
-        echo "     1. ./deploy.sh --mode infra --auto_my_ip"
-        echo "     2. ./deploy.sh --mode bootstrap-servers"
-        echo "     3. ./deploy.sh --mode services"
+        echo "     1. ./deploy.sh --mode infra --auto_my_ip    # VPC, ECS, ALB, Security Groups"
+        echo "     2. ./deploy.sh --mode bootstrap-servers     # PostgreSQL, Redis, create 11 databases"
+        echo "     3. ./deploy.sh --mode services              # Deploy 17 microservices"
+        echo "     4. ./deploy.sh --mode register-plugin       # Register test plugin (optional)"
+        echo "     5. ./deploy.sh --mode configure-countdown-timer  # Setup timer credentials (optional)"
     elif [ "$infra_ok" = true ] && [ "$services_ok" = false ]; then
         echo "  🔧 Continue with servers and services:"
-        echo "     1. ./deploy.sh --mode bootstrap-servers"
-        echo "     2. ./deploy.sh --mode services"
+        echo "     1. ./deploy.sh --mode bootstrap-servers     # PostgreSQL, Redis, create 11 databases"
+        echo "     2. ./deploy.sh --mode services              # Deploy 17 microservices"
+        echo "     3. ./deploy.sh --mode register-plugin       # Register test plugin (optional)"
+        echo "     4. ./deploy.sh --mode configure-countdown-timer  # Setup timer credentials (optional)"
     elif [ "$infra_ok" = true ] && [ "$services_ok" = true ]; then
         echo "  ✅ Deployment complete! Available commands:"
         echo "     ./deploy.sh --mode status    # Check status"
@@ -881,14 +899,25 @@ deploy_services() {
     log_info "Initializing Terraform..."
     terraform init
     
+    # Check if secrets file exists (created by update_services_config.sh)
+    if [ -f "secrets.tfvars" ]; then
+        log_info "Found secrets file, will use generated secrets"
+        terraform_plan_args="-var-file=env/dev.tfvars -var-file=secrets.tfvars"
+        terraform_apply_args="-var-file=env/dev.tfvars -var-file=secrets.tfvars"
+    else
+        log_warning "Secrets file not found, using default secrets"
+        terraform_plan_args="-var-file=env/dev.tfvars"
+        terraform_apply_args="-var-file=env/dev.tfvars"
+    fi
+    
     log_info "Planning changes..."
-    terraform plan -var-file=env/dev.tfvars
+    terraform plan $terraform_plan_args
     
     read -p "Apply changes? (y/N): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         log_info "Applying changes..."
-        terraform apply -var-file=env/dev.tfvars -auto-approve
+        terraform apply $terraform_apply_args -auto-approve
         log_success "Services deployed"
         
         # If this is part of full deployment, run additional setup steps
@@ -1249,7 +1278,14 @@ cleanup_all() {
         log_info "Deleting services..."
         cd "$PROJECT_ROOT/03-services-deploy"
         if [ -f "terraform.tfstate" ]; then
-            terraform destroy -var-file=env/dev.tfvars -auto-approve
+            # Check if secrets file exists (created by update_services_config.sh)
+            if [ -f "secrets.tfvars" ]; then
+                log_info "Found secrets file, will use generated secrets for cleanup"
+                terraform destroy -var-file=env/dev.tfvars -var-file=secrets.tfvars -auto-approve
+            else
+                log_warning "Secrets file not found, using default secrets for cleanup"
+                terraform destroy -var-file=env/dev.tfvars -auto-approve
+            fi
         else
             log_info "Services state file not found, skipping"
         fi
@@ -1285,6 +1321,19 @@ cleanup_all() {
             log_info "SSH keys deleted"
         else
             log_info "SSH keys folder not found"
+        fi
+        
+        log_info "Cleaning up temporary files..."
+        # Remove temporary secrets file
+        if [ -f "$PROJECT_ROOT/03-services-deploy/secrets.tfvars" ]; then
+            rm -f "$PROJECT_ROOT/03-services-deploy/secrets.tfvars"
+            log_info "Temporary secrets file deleted"
+        fi
+        
+        # Remove temporary AZs file
+        if [ -f "$PROJECT_ROOT/01-infrastructure/env/temp_azs.tfvars" ]; then
+            rm -f "$PROJECT_ROOT/01-infrastructure/env/temp_azs.tfvars"
+            log_info "Temporary AZs file deleted"
         fi
         
         log_success "All resources deleted"

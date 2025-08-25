@@ -172,12 +172,10 @@ read_passwords_from_yml() {
         return 1
     fi
     
-    # Read application secrets
-    local jwt_secret=$(yq eval '.application_secrets.jwt_secret' "$passwords_file" 2>/dev/null)
-    local countdown_secret_key=$(yq eval '.application_secrets.countdown_secret_key' "$passwords_file" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        log_warning "Failed to read application secrets from $passwords_file, will generate new ones"
-    fi
+    # Generate new application secrets (don't read from passwords.yml)
+    log_info "Generating new application secrets..."
+    local jwt_secret=$(openssl rand -base64 64 | tr -d '\n')
+    local countdown_secret_key=$(openssl rand -base64 32 | tr -d '\n')
     
     # Export variables for use in other functions
     export POSTGRESQL_PASSWORDS="$postgresql_passwords"
@@ -188,6 +186,7 @@ read_passwords_from_yml() {
     export COUNTDOWN_SECRET_KEY="$countdown_secret_key"
     
     log_success "Passwords loaded from $passwords_file"
+    log_success "Generated new JWT_SECRET and COUNTDOWN_SECRET_KEY"
     return 0
 }
 
@@ -229,6 +228,25 @@ update_image_versions_in_json_files() {
     
     log_success "Updated image versions in $updated_count JSON files"
     return 0
+}
+
+# Function to create temporary secrets file for Terraform
+create_secrets_file() {
+    local secrets_file="$PROJECT_ROOT/03-services-deploy/secrets.tfvars"
+    
+    log_info "Creating temporary secrets file: $secrets_file"
+    
+    cat > "$secrets_file" << EOF
+# Auto-generated secrets file - DO NOT COMMIT TO VERSION CONTROL
+# Generated on: $(date)
+# This file contains dynamically generated secrets for Terraform
+
+jwt_secret = "${JWT_SECRET}"
+countdown_secret_key = "${COUNTDOWN_SECRET_KEY}"
+EOF
+    
+    log_success "Secrets file created: $secrets_file"
+    log_warning "⚠️  IMPORTANT: This file contains sensitive data and should not be committed to version control"
 }
 
 # Function update_passwords_in_main_tf removed - now handled by replace_placeholders
@@ -277,11 +295,15 @@ else
     exit 1
 fi
 
+# Create secrets file (always, regardless of infrastructure status)
+create_secrets_file
+
 # Check that infrastructure is deployed
 if [ ! -f "$PROJECT_ROOT/01-infrastructure/terraform.tfstate" ]; then
-    log_error "Error: terraform.tfstate not found in $PROJECT_ROOT/01-infrastructure/"
-    log_error "First deploy infrastructure: ./deploy.sh --mode infra --aws_profile $AWS_PROFILE"
-    exit 1
+    log_warning "Infrastructure not deployed yet. Secrets generated but full configuration update skipped."
+    log_info "Deploy infrastructure first: ./deploy.sh --mode infra --aws_profile $AWS_PROFILE"
+    log_success "Secrets generated successfully!"
+    exit 0
 fi
 
 # Check services folder exists
@@ -619,10 +641,17 @@ EOF
     fi
     done
 
-# Passwords are now handled by placeholder replacement in main.tf generation
-log_success "Passwords automatically synchronized via placeholder replacement"
 
-log_success "Configuration updated successfully!"
+
+# Check if infrastructure is deployed
+if [ -f "$PROJECT_ROOT/01-infrastructure/terraform.tfstate" ]; then
+    # Passwords are now handled by placeholder replacement in main.tf generation
+    log_success "Passwords automatically synchronized via placeholder replacement"
+    log_success "Configuration updated successfully!"
+else
+    log_warning "Infrastructure not deployed yet. Full configuration update skipped."
+    log_info "Deploy infrastructure first: ./deploy.sh --mode infra --aws_profile $AWS_PROFILE"
+fi
 log_info "Backup saved in: $PROJECT_ROOT/03-services-deploy/env/dev.tfvars.backup"
 log_info "Backup main.tf saved in: $PROJECT_ROOT/03-services-deploy/main.tf.backup"
 

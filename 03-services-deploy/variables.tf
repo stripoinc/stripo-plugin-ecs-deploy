@@ -88,4 +88,16 @@ variable "cloud_map_namespace_id" {
 variable "dockerhub_secret_arn" {
   description = "ARN of secret with Docker Hub credentials (AWS Secrets Manager)"
   type        = string
+}
+
+variable "jwt_secret" {
+  description = "JWT secret for API authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "countdown_secret_key" {
+  description = "Secret key for countdown timer service"
+  type        = string
+  sensitive   = true
 } 
